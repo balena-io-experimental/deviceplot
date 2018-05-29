@@ -147,8 +147,12 @@ def plot_data(oslist, special_versions):
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
-        print("Please provide an input file as an argument to the script.", file=sys.stderr)
+        print(
+            "Please provide an input file as an argument to the script.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     FLEETSCORE_FILE = sys.argv[1]
     WORKBOOK = xlrd.open_workbook(FLEETSCORE_FILE)

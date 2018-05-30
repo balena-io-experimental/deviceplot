@@ -6,8 +6,11 @@ Display the resinOS versions as time series, based on the fleet score data recor
 from datetime import datetime
 import numpy
 import xlrd
+import semver
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+
+MC_VERSION = ">=2.12.0"
 
 
 def get_date(datestring):
@@ -49,8 +52,9 @@ def load_counts(workbook):
         version = ossheet.cell(row_idx, 0).value
         oslist[version] = dates.copy()
     # Special Sheets: will hold the sum for the 1.x and 2.x devices
-    oslist["2.x"] = dates.copy()
-    oslist["1.x"] = dates.copy()
+    extra_versions = ["1.x", "2.x", "mc-capable", "non-mc-capable"]
+    for ver in extra_versions:
+        oslist[ver] = dates.copy()
 
     # Load all the counts into the sheets by date
     for daily in date_sheets:
@@ -69,6 +73,12 @@ def load_counts(workbook):
                 special_version = "1.x"
             dayindex = numpy.where(oslist[special_version] == daily_date)[0][0]
             oslist[special_version][dayindex, 1] += count
+            if semver.match(version, MC_VERSION):
+                mc_capability = "mc-capable"
+            else:
+                mc_capability = "non-mc-capable"
+            dayindex = numpy.where(oslist[mc_capability] == daily_date)[0][0]
+            oslist[mc_capability][dayindex, 1] += count
     return oslist
 
 
@@ -108,13 +118,19 @@ def plot_data(oslist, special_versions):
     fig1, ax1 = plt.subplots(figsize=(12, 8), dpi=150)
     # Plot by major version
     fig2, ax2 = plt.subplots(figsize=(12, 8), dpi=150)
-    ax2.set_title("Devices in a rolling 28-day window by OS version")
     major_versions = ["1.x", "2.x"]
+    # Plot by Multicontainer (MC) capability
+    fig3, ax3 = plt.subplots(figsize=(12, 8), dpi=150)
+    mc_capability = ["mc-capable", "non-mc-capable"]
     # Some markers, nothing special in how many there are, could add more
     markers = [None, "o", "^", "v", "s", "d"]
     count = 0
     for key in oslist:
-        ax = ax2 if key in major_versions else ax1
+        ax = ax1
+        if key in major_versions:
+            ax = ax2
+        if key in mc_capability:
+            ax = ax3
         counts = oslist[key]
         if key in special_versions:
             linewidth = 3
@@ -141,6 +157,12 @@ def plot_data(oslist, special_versions):
     )
     format_plot(
         fig2, ax2, "Device count in a rolling 28-day window by major OS version", XLIM
+    )
+    format_plot(
+        fig3,
+        ax3,
+        "Device count in a rolling 28-day window by multicontainer capability",
+        XLIM,
     )
     plt.show()
 
@@ -169,5 +191,7 @@ if __name__ == "__main__":
         "2.7.5",
         "2.3.0",
         "2.2.0",
+        "mc-capable",
+        "non-mc-capable",
     ]
     plot_data(OSLIST, SPECIAL_VERSIONS)

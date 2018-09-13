@@ -123,7 +123,7 @@ def plot_data(oslist, special_versions):
     fig3, ax3 = plt.subplots(figsize=(12, 8), dpi=150)
     mc_capability = ["mc-capable", "non-mc-capable"]
     # Some markers, nothing special in how many there are, could add more
-    markers = [None, "o", "^", "v", "s", "d"]
+    markers = [None, "o", "^", "v", "s", "d", "D", "|"]
     count = 0
     for key in oslist:
         ax = ax1
